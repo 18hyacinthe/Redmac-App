@@ -9,18 +9,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.light.tint,
+        tabBarInactiveTintColor: '#999',
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.light.card,
-          borderTopColor: Colors.light.border,
-          borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600' as const,
+          backgroundColor: '#fff',
         },
       }}
     >
