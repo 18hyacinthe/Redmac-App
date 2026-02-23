@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Shield, MapPin, Settings, LogOut, HelpCircle, Award, ListChecks, LayoutDashboard } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/providers/AuthProvider';
@@ -27,53 +28,7 @@ export default function ProfilScreen() {
     );
   };
 
-  if (!user && !isGuest) {
-    return (
-      <View style={styles.authContainer}>
-        <User size={64} color={Colors.light.tint} />
-        <Text style={styles.authTitle}>Bienvenue</Text>
-        <Text style={styles.authText}>
-          Connectez-vous pour accéder à votre profil
-        </Text>
-        <TouchableOpacity 
-          style={styles.authButton}
-          onPress={() => router.push('/auth/login' as any)}
-        >
-          <Text style={styles.authButtonText}>Se connecter</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.authButton, styles.registerButton]}
-          onPress={() => router.push('/auth/register' as any)}
-        >
-          <Text style={[styles.authButtonText, styles.registerButtonText]}>Créer un compte</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (isGuest) {
-    return (
-      <View style={styles.authContainer}>
-        <User size={64} color={Colors.light.tint} />
-        <Text style={styles.authTitle}>Mode invité</Text>
-        <Text style={styles.authText}>
-          Créez un compte pour profiter de toutes les fonctionnalités
-        </Text>
-        <TouchableOpacity 
-          style={styles.authButton}
-          onPress={() => router.push('/auth/register' as any)}
-        >
-          <Text style={styles.authButtonText}>Créer un compte</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.authButton, styles.registerButton]}
-          onPress={() => router.push('/auth/login' as any)}
-        >
-          <Text style={[styles.authButtonText, styles.registerButtonText]}>Se connecter</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // No auth check needed
 
   const getRoleLabel = (role: string) => {
     switch (role) {
@@ -104,7 +59,7 @@ export default function ProfilScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerBg} />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileCard}>
@@ -136,7 +91,7 @@ export default function ProfilScreen() {
         </View>
 
         {user?.role === 'KAMDEM' && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/kamdem/validation' as any)}
           >
@@ -152,7 +107,7 @@ export default function ProfilScreen() {
 
         {user?.role === 'ADMIN' && (
           <>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => router.push('/admin/dashboard' as any)}
             >
@@ -164,7 +119,7 @@ export default function ProfilScreen() {
                 <Text style={styles.menuSubtitle}>Statistiques de la plateforme</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => router.push('/admin/users' as any)}
             >
@@ -181,7 +136,7 @@ export default function ProfilScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Paramètres</Text>
-          
+
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuIconContainer}>
               <Settings size={24} color={Colors.light.text} />
@@ -212,7 +167,7 @@ export default function ProfilScreen() {
 
         <Text style={styles.version}>Version 1.0.0</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -234,7 +189,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 60,
   },
   profileCard: {
     backgroundColor: Colors.light.card,

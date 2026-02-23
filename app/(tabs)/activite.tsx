@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Award, TrendingUp, CheckCircle, XCircle, Camera } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useData } from '@/providers/DataProvider';
@@ -12,28 +13,12 @@ export default function ActiviteScreen() {
   const { getUserActivities } = useData();
   const { user, isGuest } = useAuth();
 
-  if (!user && !isGuest) {
-    return (
-      <View style={styles.authContainer}>
-        <Award size={64} color={Colors.light.tint} />
-        <Text style={styles.authTitle}>Connexion requise</Text>
-        <Text style={styles.authText}>
-          Connectez-vous pour voir votre activité et vos points
-        </Text>
-        <TouchableOpacity
-          style={styles.authButton}
-          onPress={() => router.push('/auth/login' as any)}
-        >
-          <Text style={styles.authButtonText}>Se connecter</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // No auth check needed
 
   const activities = user ? getUserActivities(user.id) : [];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.pointsCard}>
           <Award size={32} color={Colors.light.tint} />
@@ -111,7 +96,7 @@ export default function ActiviteScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -122,7 +107,6 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 60,
     gap: 16,
   },
   pointsCard: {

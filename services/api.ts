@@ -1,28 +1,37 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-const API_URL = 'http://localhost:3001/api';
-const TOKEN_KEY = '@auth_token';
+// Auto-detect the backend URL based on platform
+function getApiUrl(): string {
+    // On web, localhost works fine
+    if (Platform.OS === 'web') {
+        return 'http://localhost:3001/api';
+    }
+
+    // On mobile (Android/iOS), we need the machine's IP
+    // Expo provides the debugger host which contains the IP
+    const debuggerHost = Constants.expoConfig?.hostUri
+        || Constants.manifest2?.extra?.expoGo?.debuggerHost
+        || Constants.manifest?.debuggerHost;
+
+    if (debuggerHost) {
+        const ip = debuggerHost.split(':')[0];
+        return `http://${ip}:3001/api`;
+    }
+
+    // Fallback — try 10.0.2.2 for Android emulator (points to host machine)
+    if (Platform.OS === 'android') {
+        return 'http://10.0.2.2:3001/api';
+    }
+
+    return 'http://localhost:3001/api';
+}
+
+const API_URL = getApiUrl();
+
+console.log('🔗 API URL:', API_URL);
 
 class ApiService {
-    private token: string | null = null;
-
-    async init() {
-        this.token = await AsyncStorage.getItem(TOKEN_KEY);
-    }
-
-    async setToken(token: string | null) {
-        this.token = token;
-        if (token) {
-            await AsyncStorage.setItem(TOKEN_KEY, token);
-        } else {
-            await AsyncStorage.removeItem(TOKEN_KEY);
-        }
-    }
-
-    getToken() {
-        return this.token;
-    }
-
     private async request<T>(
         endpoint: string,
         options: RequestInit = {},
@@ -31,10 +40,6 @@ class ApiService {
             'Content-Type': 'application/json',
             ...(options.headers as Record<string, string>),
         };
-
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
-        }
 
         const response = await fetch(`${API_URL}${endpoint}`, {
             ...options,
@@ -52,42 +57,6 @@ class ApiService {
         }
 
         return data as T;
-    }
-
-    // ==================
-    // AUTH
-    // ==================
-
-    async login(email: string, password: string) {
-        const result = await this.request<{
-            user: any;
-            access_token: string;
-        }>('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password }),
-        });
-        await this.setToken(result.access_token);
-        return result;
-    }
-
-    async register(email: string, password: string, pseudo: string) {
-        const result = await this.request<{
-            user: any;
-            access_token: string;
-        }>('/auth/register', {
-            method: 'POST',
-            body: JSON.stringify({ email, password, pseudo }),
-        });
-        await this.setToken(result.access_token);
-        return result;
-    }
-
-    async getProfile() {
-        return this.request<any>('/auth/profile');
-    }
-
-    async logout() {
-        await this.setToken(null);
     }
 
     // ==================
@@ -165,7 +134,7 @@ class ApiService {
     }
 
     // ==================
-    // USERS (Admin)
+    // USERS
     // ==================
 
     async getUsers() {
@@ -187,7 +156,7 @@ class ApiService {
     }
 
     // ==================
-    // STATS (Admin)
+    // STATS
     // ==================
 
     async getStats() {

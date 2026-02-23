@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Image, Platform, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, MapPin, Image as ImageIcon, Clock, AlertCircle } from 'lucide-react-native';
@@ -172,26 +173,10 @@ export default function AjouterScreen() {
     }
   };
 
-  if (!user && !isGuest) {
-    return (
-      <View style={styles.authContainer}>
-        <MapPin size={64} color={Colors.light.tint} />
-        <Text style={styles.authTitle}>Connexion requise</Text>
-        <Text style={styles.authText}>
-          Connectez-vous pour ajouter des points de vente
-        </Text>
-        <TouchableOpacity
-          style={styles.authButton}
-          onPress={() => router.push('/auth/login' as any)}
-        >
-          <Text style={styles.authButtonText}>Se connecter</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // No auth check needed
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>Ajouter un point de vente</Text>
@@ -335,7 +320,7 @@ export default function AjouterScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

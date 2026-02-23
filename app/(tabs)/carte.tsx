@@ -116,7 +116,7 @@ export default function CarteScreen() {
     if (filters.statut !== 'TOUS' && point.statut !== filters.statut) return false;
     if (filters.categorie !== 'TOUS' && point.categorie !== filters.categorie) return false;
     if (point.statut === 'REJETE' && user?.role !== 'ADMIN') return false;
-    
+
     if (search) {
       const searchLower = search.toLowerCase();
       return (
@@ -125,7 +125,7 @@ export default function CarteScreen() {
         point.quartier?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     return true;
   });
 
@@ -133,29 +133,7 @@ export default function CarteScreen() {
     router.push(`/point/${point.id}` as any);
   };
 
-  if (!user && !isGuest) {
-    return (
-      <View style={styles.authContainer}>
-        <MapPin size={64} color={Colors.light.tint} />
-        <Text style={styles.authTitle}>Bienvenue sur CarteMa</Text>
-        <Text style={styles.authText}>
-          Aidez à cartographier les points de vente au Maroc
-        </Text>
-        <TouchableOpacity 
-          style={styles.authButton}
-          onPress={() => router.push('/auth/login' as any)}
-        >
-          <Text style={styles.authButtonText}>Se connecter</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.authButton, styles.guestButton]}
-          onPress={() => router.push('/auth/register' as any)}
-        >
-          <Text style={[styles.authButtonText, styles.guestButtonText]}>Créer un compte</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // No auth check needed — direct access
 
   if (Platform.OS === 'web') {
     return (
@@ -179,7 +157,7 @@ export default function CarteScreen() {
               placeholderTextColor={Colors.light.textSecondary}
             />
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.filterButton, showFilters && styles.filterButtonActive]}
             onPress={() => setShowFilters(!showFilters)}
           >
@@ -302,7 +280,7 @@ export default function CarteScreen() {
             placeholderTextColor={Colors.light.textSecondary}
           />
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.filterButton, showFilters && styles.filterButtonActive]}
           onPress={() => setShowFilters(!showFilters)}
         >
@@ -356,7 +334,7 @@ export default function CarteScreen() {
         </View>
       )}
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.locationButton}
         onPress={handleMyLocation}
         disabled={locationLoading}
