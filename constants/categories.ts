@@ -21,16 +21,6 @@ export const getStatusLabel = (status: string): string => {
   }
 };
 
-export const getActivityLabel = (type: string): string => {
-  switch (type) {
-    case 'SUBMISSION': return 'Point ajouté';
-    case 'VALIDATION_ACCEPTED': return 'Point validé';
-    case 'VALIDATION_REJECTED': return 'Point rejeté';
-    case 'BONUS_PHOTO': return 'Bonus photo';
-    default: return type;
-  }
-};
-
 export const MOROCCO_CENTER = {
   latitude: 31.7917,
   longitude: -7.0926,

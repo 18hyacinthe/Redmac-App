@@ -4,7 +4,16 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AuthProvider } from "@/providers/AuthProvider";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+import { LanguageProvider } from "@/providers/LanguageProvider";
+import { AccessibilityProvider } from "@/providers/AccessibilityProvider";
+import { IdentityProvider } from "@/providers/IdentityProvider";
 import { DataProvider } from "@/providers/DataProvider";
 
 SplashScreen.preventAutoHideAsync();
@@ -13,87 +22,64 @@ const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: "Retour" }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "slide_from_right",
+        contentStyle: { backgroundColor: "#F8F5F0" },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="map" />
+      <Stack.Screen name="add" />
+      <Stack.Screen name="stats" />
       <Stack.Screen
         name="point/[id]"
         options={{
-          title: "Détails du point",
-          headerStyle: {
-            backgroundColor: '#F8F6F3',
-          },
-          headerTintColor: '#C65D3B',
-        }}
-      />
-      <Stack.Screen
-        name="auth/login"
-        options={{
-          title: "Connexion",
           presentation: "modal",
-        }}
-      />
-      <Stack.Screen
-        name="auth/register"
-        options={{
-          title: "Inscription",
-          presentation: "modal",
-        }}
-      />
-      <Stack.Screen
-        name="kamdem/validation"
-        options={{
-          title: "À valider",
-          headerStyle: {
-            backgroundColor: '#F8F6F3',
-          },
-          headerTintColor: '#C65D3B',
-        }}
-      />
-      <Stack.Screen
-        name="admin/dashboard"
-        options={{
-          title: "Dashboard Admin",
-          headerStyle: {
-            backgroundColor: '#F8F6F3',
-          },
-          headerTintColor: '#C65D3B',
-        }}
-      />
-      <Stack.Screen
-        name="admin/users"
-        options={{
-          title: "Gestion utilisateurs",
-          headerStyle: {
-            backgroundColor: '#F8F6F3',
-          },
-          headerTintColor: '#C65D3B',
+          animation: "slide_from_bottom",
         }}
       />
       <Stack.Screen
         name="+not-found"
-        options={{
-          title: "Page introuvable",
-        }}
+        options={{ title: "Page introuvable" }}
       />
     </Stack>
   );
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <DataProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
-          </DataProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AccessibilityProvider>
+            <IdentityProvider>
+              <DataProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+              </DataProvider>
+            </IdentityProvider>
+          </AccessibilityProvider>
+        </LanguageProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
   );

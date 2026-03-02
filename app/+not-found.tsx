@@ -1,42 +1,64 @@
-import { Link, Stack } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
-import Colors from '@/constants/colors';
+import React from 'react';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Home } from 'lucide-react-native';
+import { PALETTE, TYPOGRAPHY, RADIUS, SPACING } from '@/constants/theme';
 
 export default function NotFoundScreen() {
+  const router = useRouter();
+
   return (
-    <>
-      <Stack.Screen options={{ title: 'Page introuvable' }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>Cette page n&apos;existe pas.</Text>
-        <Link href="/(tabs)/carte" style={styles.link}>
-          <Text style={styles.linkText}>Retour à la carte</Text>
-        </Link>
-      </View>
-    </>
+    <View style={styles.container}>
+      <Text style={styles.emoji}>🗺️</Text>
+      <Text style={styles.title}>Page introuvable</Text>
+      <Text style={styles.subtitle}>Cette page n'existe pas.</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.replace('/')}
+      >
+        <Home size={20} color={PALETTE.text.inverse} />
+        <Text style={styles.buttonText}>Retour à l'accueil</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: PALETTE.sand[100],
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: Colors.light.background,
+    padding: SPACING['2xl'],
+  },
+  emoji: {
+    fontSize: 64,
+    marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold' as const,
-    color: Colors.light.text,
-    marginBottom: 20,
+    fontSize: TYPOGRAPHY.size['2xl'],
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+    color: PALETTE.text.primary,
+    marginBottom: SPACING.sm,
   },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
+  subtitle: {
+    fontSize: TYPOGRAPHY.size.base,
+    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    color: PALETTE.text.tertiary,
+    marginBottom: SPACING['2xl'],
   },
-  linkText: {
-    fontSize: 16,
-    color: Colors.light.tint,
-    fontWeight: '600' as const,
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: PALETTE.clay[500],
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.base,
+    borderRadius: RADIUS.md,
+  },
+  buttonText: {
+    fontSize: TYPOGRAPHY.size.base,
+    fontFamily: TYPOGRAPHY.fontFamily.semiBold,
+    color: PALETTE.text.inverse,
   },
 });
