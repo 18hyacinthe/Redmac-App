@@ -59,8 +59,13 @@ export default function ConfirmStep() {
         try {
             const catLabel = t('categories', formData.categorie);
             const result = await addPoint({
-                ...formData,
-                nom_affiche: `Point ${catLabel}`,
+                nom: `Point ${catLabel}`,
+                adresse: `${formData.latitude.toFixed(6)}, ${formData.longitude.toFixed(6)}`,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
+                categorie: formData.categorie || 'Autre',
+                image_url: formData.photo_url || undefined,
+                source: 'APP_COLLECTE',
             });
 
             setIsSubmitting(false);
@@ -100,7 +105,7 @@ export default function ConfirmStep() {
         }
     };
 
-    const categoryVisual = CATEGORY_VISUALS[formData.categorie] || CATEGORY_VISUALS.AUTRE;
+    const categoryVisual = (CATEGORY_VISUALS as any)[formData.categorie] || CATEGORY_VISUALS.AUTRE;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>

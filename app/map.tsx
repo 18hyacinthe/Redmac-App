@@ -16,11 +16,11 @@ import { ShoppingBag, Newspaper, Coffee, ShoppingCart, Store } from 'lucide-reac
 const MOROCCO_CENTER = { latitude: 31.7917, longitude: -7.0926 };
 
 const CATEGORY_ICONS = [
-    { key: 'EPICERIE', Icon: ShoppingBag, color: CATEGORY_VISUALS.EPICERIE.color },
-    { key: 'KIOSQUE', Icon: Newspaper, color: CATEGORY_VISUALS.KIOSQUE.color },
-    { key: 'CAFE', Icon: Coffee, color: CATEGORY_VISUALS.CAFE.color },
-    { key: 'VENDEUR_AMBULANT', Icon: ShoppingCart, color: CATEGORY_VISUALS.VENDEUR_AMBULANT.color },
-    { key: 'AUTRE', Icon: Store, color: CATEGORY_VISUALS.AUTRE.color },
+    { key: 'Epicerie', alt: 'EPICERIE', Icon: ShoppingBag, color: CATEGORY_VISUALS.EPICERIE.color },
+    { key: 'Kiosque', alt: 'KIOSQUE', Icon: Newspaper, color: CATEGORY_VISUALS.KIOSQUE.color },
+    { key: 'Café', alt: 'CAFE', Icon: Coffee, color: CATEGORY_VISUALS.CAFE.color },
+    { key: 'Boulangerie', alt: 'VENDEUR_AMBULANT', Icon: ShoppingCart, color: CATEGORY_VISUALS.VENDEUR_AMBULANT.color },
+    { key: 'Autre', alt: 'AUTRE', Icon: Store, color: CATEGORY_VISUALS.AUTRE.color },
 ];
 
 const STATUS_DOTS = [
@@ -95,14 +95,17 @@ export default function MapScreen() {
 
     const filteredPoints = points.filter(point => {
         if (filters.statut && point.statut !== filters.statut) return false;
-        if (filters.categorie && point.categorie !== filters.categorie) return false;
+        if (filters.categorie && point.categorie?.toLowerCase() !== filters.categorie.toLowerCase()) return false;
         if (point.statut === 'REJETE') return false;
         if (search) {
             const s = search.toLowerCase();
             return (
                 point.nom_affiche?.toLowerCase().includes(s) ||
+                point.nom?.toLowerCase().includes(s) ||
                 point.ville?.toLowerCase().includes(s) ||
-                point.quartier?.toLowerCase().includes(s)
+                point.zone?.toLowerCase().includes(s) ||
+                point.quartier?.toLowerCase().includes(s) ||
+                point.adresse?.toLowerCase().includes(s)
             );
         }
         return true;
@@ -118,9 +121,9 @@ export default function MapScreen() {
         if (!mapReady) return;
         const markersData = filteredPoints.map(p => ({
             id: p.id, lat: p.latitude, lng: p.longitude,
-            color: getMarkerColor(p.statut),
-            name: p.nom_affiche || 'Point de vente',
-            status: p.statut,
+            color: getMarkerColor(p.statut || 'EN_ATTENTE'),
+            name: p.nom_affiche || p.nom || 'Point de vente',
+            status: p.statut || 'EN_ATTENTE',
         }));
         sendToMap(`updateMarkers(${JSON.stringify(markersData)})`);
     }, [filteredPoints, mapReady]);

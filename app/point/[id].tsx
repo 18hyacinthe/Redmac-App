@@ -13,7 +13,7 @@ export default function PointDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useLanguage();
   const { points } = useData();
-  const point = points.find(p => p.id === id);
+  const point = points.find(p => String(p.id) === String(id));
 
   if (!point) {
     return (
@@ -30,7 +30,7 @@ export default function PointDetailScreen() {
     );
   }
 
-  const categoryVisual = CATEGORY_VISUALS[point.categorie] || CATEGORY_VISUALS.AUTRE;
+  const categoryVisual = (CATEGORY_VISUALS as any)[point.categorie] || CATEGORY_VISUALS.AUTRE;
   const statusColors: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
     VALIDE: {
       bg: PALETTE.status.validatedBg,
@@ -49,7 +49,7 @@ export default function PointDetailScreen() {
     },
   };
 
-  const status = statusColors[point.statut] || statusColors.EN_ATTENTE;
+  const status = statusColors[point.statut || 'EN_ATTENTE'] || statusColors.EN_ATTENTE;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -70,12 +70,12 @@ export default function PointDetailScreen() {
         {/* Title + status */}
         <View style={styles.titleRow}>
           <Text style={styles.pointName}>
-            {point.nom_affiche || t('point', 'noName')}
+            {point.nom_affiche || point.nom || t('point', 'noName')}
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
             {status.icon}
             <Text style={[styles.statusText, { color: status.text }]}>
-              {t('statuses', point.statut)}
+              {t('statuses', point.statut || 'EN_ATTENTE')}
             </Text>
           </View>
         </View>
@@ -89,27 +89,27 @@ export default function PointDetailScreen() {
         </View>
 
         {/* Photo */}
-        {point.photo_url ? (
+        {point.image_url ? (
           <View style={styles.photoContainer}>
-            <Image source={{ uri: point.photo_url }} style={styles.photo} />
+            <Image source={{ uri: point.image_url }} style={styles.photo} />
           </View>
         ) : null}
 
         {/* Details card */}
         <GlassSurface style={styles.detailsCard}>
-          {(point.ville || point.quartier) && (
+          {(point.zone || point.ville || point.adresse || point.quartier) && (
             <View style={styles.detailRow}>
               <MapPin size={20} color={PALETTE.clay[500]} />
               <Text style={styles.detailText}>
-                {[point.ville, point.quartier].filter(Boolean).join(' — ')}
+                {[point.zone || point.ville, point.adresse || point.quartier].filter(Boolean).join(' — ')}
               </Text>
             </View>
           )}
 
-          {point.horaires && (
+          {point.type && (
             <View style={styles.detailRow}>
               <Clock size={20} color={PALETTE.clay[500]} />
-              <Text style={styles.detailText}>{point.horaires}</Text>
+              <Text style={styles.detailText}>Type: {point.type}</Text>
             </View>
           )}
 
@@ -120,11 +120,11 @@ export default function PointDetailScreen() {
             </View>
           )}
 
-          {point.repere && (
+          {point.source && (
             <View style={styles.detailRow}>
               <MapPin size={20} color={PALETTE.text.tertiary} />
               <Text style={[styles.detailText, { fontStyle: 'italic' }]}>
-                {point.repere}
+                Source: {point.source}
               </Text>
             </View>
           )}
@@ -132,7 +132,7 @@ export default function PointDetailScreen() {
 
         {/* Date info */}
         <Text style={styles.dateText}>
-          {new Date(point.created_at).toLocaleDateString('fr-FR', {
+          {new Date(point.date_collecte || point.updated_at || '').toLocaleDateString('fr-FR', {
             day: 'numeric', month: 'long', year: 'numeric',
           })}
         </Text>
