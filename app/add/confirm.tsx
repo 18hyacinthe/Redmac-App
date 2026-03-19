@@ -18,7 +18,7 @@ const STEP_ICONS = ['📍', '🏪', '📸', '✏️', '✅'];
 export default function ConfirmStep() {
     const router = useRouter();
     const { t } = useLanguage();
-    const { addPoint } = useData();
+    const { addPoint, uploadImage } = useData();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         latitude: 0,
@@ -57,6 +57,23 @@ export default function ConfirmStep() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
         try {
+            let uploadedImageUrl = undefined;
+
+            // Si on a une photo locale, on l'upload d'abord sur Cloudinary
+            if (formData.photo_url) {
+                try {
+                    uploadedImageUrl = await uploadImage(formData.photo_url);
+                } catch (uploadError) {
+                    console.error('Upload image failed:', uploadError);
+                    Alert.alert(
+                        t('common', 'error'),
+                        'Échec du téléchargement de l\'image vers Cloudinary. Veuillez réessayer.',
+                    );
+                    setIsSubmitting(false);
+                    return; // Arrêter la soumission si l'image n'est pas uploadée
+                }
+            }
+
             const catLabel = t('categories', formData.categorie);
             const result = await addPoint({
                 nom: `Point ${catLabel}`,
@@ -64,7 +81,7 @@ export default function ConfirmStep() {
                 latitude: formData.latitude,
                 longitude: formData.longitude,
                 categorie: formData.categorie || 'Autre',
-                image_url: formData.photo_url || undefined,
+                image_url: uploadedImageUrl || undefined,
                 source: 'APP_COLLECTE',
             });
 
