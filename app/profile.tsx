@@ -1,50 +1,76 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     StyleSheet, View, Text, ScrollView, TouchableOpacity,
-    ActivityIndicator, RefreshControl, FlatList,
+    ActivityIndicator, RefreshControl, FlatList, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ChevronLeft, MapPin, Trophy, Star, Clock,
-    CheckCircle, XCircle, AlertCircle, LogOut, Award,
+    CheckCircle, XCircle, AlertCircle, LogOut, Award, Gift
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { PALETTE, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
 import { useAuth } from '@/providers/AuthProvider';
-import { AgentStats, PointDeVente } from '@/types';
+import { AgentStats, PointDeVente, Voucher } from '@/types';
 import api from '@/services/api';
 import GlassSurface from '@/components/GlassSurface';
 import FloatingHomeButton from '@/components/FloatingHomeButton';
+
+const PARTNER_LOGOS: Record<string, any> = {
+    MARJANE: require('../assets/marjane.png'),
+    COCACOLA: require('../assets/cocacola.png'),
+    TOTALENERGY: require('../assets/totalenergy.png'),
+};
+
+const getPartnerLogo = (partner: string) => {
+    if (!partner) return null;
+    const normalized = partner.toUpperCase();
+    if (normalized.includes('MARJANE')) return PARTNER_LOGOS.MARJANE;
+    if (normalized.includes('COCA')) return PARTNER_LOGOS.COCACOLA;
+    if (normalized.includes('TOTAL')) return PARTNER_LOGOS.TOTALENERGY;
+    return null;
+};
 
 export default function ProfileScreen() {
     const router = useRouter();
     const { user, logout, isAuthenticated } = useAuth();
     const [agentStats, setAgentStats] = useState<AgentStats | null>(null);
     const [myPoints, setMyPoints] = useState<PointDeVente[]>([]);
+    const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        if (isAuthenticated) loadData();
-        else setIsLoading(false);
-    }, [isAuthenticated]);
+    useFocusEffect(
+        useCallback(() => {
+            if (isAuthenticated) {
+                // Si on a déjà les stats, on rafraîchit en arrière-plan (sans spinner plein écran)
+                loadData(agentStats !== null);
+            } else {
+                setIsLoading(false);
+            }
+        }, [isAuthenticated]) // Remove agentStats from dependency to avoid loop, it's captured in ref/state or we can just pass a boolean
+    );
 
-    const loadData = async () => {
+    const loadData = async (isBackground = false) => {
         try {
-            setIsLoading(true);
-            const res = await api.getMyPoints({ limit: 50 });
+            if (!isBackground) setIsLoading(true);
+            const [res, vouchersRes] = await Promise.all([
+                api.getMyPoints({ limit: 50 }),
+                api.getVouchers().catch(() => [])
+            ]);
             setAgentStats(res.agent);
             setMyPoints(res.data || []);
+            setVouchers(vouchersRes || []);
         } catch (error) {
             console.error('Error loading my points:', error);
         } finally {
-            setIsLoading(false);
+            if (!isBackground) setIsLoading(false);
         }
     };
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        await loadData();
+        await loadData(true);
         setRefreshing(false);
     }, []);
 
@@ -179,6 +205,51 @@ export default function ProfileScreen() {
                     <ChevronLeft size={18} color={PALETTE.text.tertiary} style={{ transform: [{ rotate: '180deg' }] }} />
                 </TouchableOpacity>
 
+                {/* Mes Cadeaux */}
+                <View style={styles.section}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Text style={styles.sectionTitle}>
+                            Mes Cadeaux / Bons d'achat ({vouchers.length})
+                        </Text>
+                        <TouchableOpacity onPress={() => router.push('/vouchers' as any)}>
+                            <Text style={styles.exchangeLink}>Boutique 🎁</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {vouchers.length === 0 ? (
+                        <GlassSurface style={styles.emptyPointsCard}>
+                            <Text style={styles.emptyPointsEmoji}>🎁</Text>
+                            <Text style={styles.emptyPointsText}>
+                                Vous n'avez pas encore de bons d'achat. Échangez vos points validés dans la boutique !
+                            </Text>
+                            <TouchableOpacity style={styles.exchangeBtn} onPress={() => router.push('/vouchers' as any)}>
+                                <Text style={styles.exchangeBtnText}>Échanger mes points</Text>
+                            </TouchableOpacity>
+                        </GlassSurface>
+                    ) : (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: SPACING.md }}>
+                            {vouchers.map((v) => (
+                                <GlassSurface key={v.id} style={styles.voucherCard}>
+                                    <View style={styles.voucherLogoContainer}>
+                                        {getPartnerLogo(v.partner) ? (
+                                            <Image source={getPartnerLogo(v.partner)} style={styles.voucherLogo} resizeMode="contain" />
+                                        ) : (
+                                            <Gift size={24} color={PALETTE.clay[500]} />
+                                        )}
+                                    </View>
+                                    <Text style={styles.voucherPartner}>{v.partner}</Text>
+                                    <View style={styles.voucherValueBox}>
+                                        <Text style={styles.voucherValue}>{(v.value || 0).toString().replace(/\.0+$/, '')} MAD</Text>
+                                    </View>
+                                    <View style={styles.voucherCodeBox}>
+                                        <Text style={styles.voucherCode} selectable>{v.code}</Text>
+                                    </View>
+                                </GlassSurface>
+                            ))}
+                        </ScrollView>
+                    )}
+                </View>
+
                 {/* My collected points */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>
@@ -299,6 +370,39 @@ const styles = StyleSheet.create({
         color: PALETTE.text.primary,
     },
 
+    // Vouchers
+    voucherCard: {
+        width: 140,
+        alignItems: 'center',
+        padding: SPACING.base,
+        gap: SPACING.xs,
+    },
+    voucherLogoContainer: {
+        width: 56, height: 56, borderRadius: RADIUS.lg, backgroundColor: PALETTE.sand[100],
+        alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+        borderWidth: 1, borderColor: PALETTE.glass.whiteBorder,
+    },
+    voucherLogo: {
+        width: 44, height: 44,
+    },
+    voucherPartner: {
+        fontSize: TYPOGRAPHY.size.sm, fontFamily: TYPOGRAPHY.fontFamily.semiBold, color: PALETTE.text.primary,
+        textAlign: 'center', marginTop: SPACING.xs,
+    },
+    voucherValueBox: {
+        backgroundColor: PALETTE.status.validatedBg, paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.sm,
+    },
+    voucherValue: {
+        fontSize: TYPOGRAPHY.size.xs, fontFamily: TYPOGRAPHY.fontFamily.bold, color: PALETTE.status.validated,
+    },
+    voucherCodeBox: {
+        backgroundColor: PALETTE.sand[200], paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.sm,
+        marginTop: SPACING.xs, width: '100%', alignItems: 'center'
+    },
+    voucherCode: {
+        fontSize: TYPOGRAPHY.size.xs, fontFamily: TYPOGRAPHY.fontFamily.medium, color: PALETTE.text.secondary,
+    },
+
     // Section
     section: { gap: SPACING.md },
     sectionTitle: {
@@ -350,5 +454,14 @@ const styles = StyleSheet.create({
     emptyPointsText: {
         fontSize: TYPOGRAPHY.size.sm, fontFamily: TYPOGRAPHY.fontFamily.regular,
         color: PALETTE.text.secondary, textAlign: 'center', lineHeight: 20,
+    },
+    exchangeLink: {
+        fontSize: TYPOGRAPHY.size.sm, fontFamily: TYPOGRAPHY.fontFamily.bold, color: PALETTE.clay[500],
+    },
+    exchangeBtn: {
+        backgroundColor: PALETTE.clay[500], paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderRadius: RADIUS.sm, marginTop: SPACING.xs
+    },
+    exchangeBtnText: {
+        fontSize: TYPOGRAPHY.size.sm, fontFamily: TYPOGRAPHY.fontFamily.bold, color: PALETTE.text.inverse,
     },
 });

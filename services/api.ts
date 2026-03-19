@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     PointDeVente, PaginatedResponse, FiltersResponse, StatsResponse,
     CreatePointInput, User, LoginResponse, RegisterResponse,
-    MyPointsResponse, RankingAgent,
+    MyPointsResponse, RankingAgent, Voucher
 } from '@/types';
 
 // ============================================================
@@ -299,6 +299,23 @@ class GeoCommercialAPI {
         if (params?.status) query.set('status', params.status);
         const qs = query.toString();
         return this.request<MyPointsResponse>(`/points/my-points${qs ? `?${qs}` : ''}`);
+    }
+
+    /**
+     * GET /api/auth/vouchers — Get collected vouchers for the agent
+     */
+    async getVouchers(): Promise<Voucher[]> {
+        return this.request<Voucher[]>('/auth/vouchers');
+    }
+
+    /**
+     * POST /api/auth/vouchers/exchange — Exchange points for a voucher
+     */
+    async exchangeVoucher(cost: number, partner: string): Promise<{ message?: string; voucher?: Voucher }> {
+        return this.request<{ message?: string; voucher?: Voucher }>('/auth/vouchers/exchange', {
+            method: 'POST',
+            body: JSON.stringify({ cost, partner }),
+        });
     }
 
     /**
