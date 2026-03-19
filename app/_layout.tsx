@@ -15,6 +15,7 @@ import { LanguageProvider } from "@/providers/LanguageProvider";
 import { AccessibilityProvider } from "@/providers/AccessibilityProvider";
 import { IdentityProvider } from "@/providers/IdentityProvider";
 import { DataProvider } from "@/providers/DataProvider";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +34,15 @@ function RootLayoutNav() {
       <Stack.Screen name="map" />
       <Stack.Screen name="add" />
       <Stack.Screen name="stats" />
+      <Stack.Screen name="profile" />
+      <Stack.Screen name="ranking" />
+      <Stack.Screen
+        name="auth"
+        options={{
+          presentation: "modal",
+          animation: "slide_from_bottom",
+        }}
+      />
       <Stack.Screen
         name="point/[id]"
         options={{
@@ -72,11 +82,13 @@ export default function RootLayout() {
         <LanguageProvider>
           <AccessibilityProvider>
             <IdentityProvider>
-              <DataProvider>
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                  <RootLayoutNav />
-                </GestureHandlerRootView>
-              </DataProvider>
+              <AuthProvider>
+                <DataProvider>
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    <RootLayoutNav />
+                  </GestureHandlerRootView>
+                </DataProvider>
+              </AuthProvider>
             </IdentityProvider>
           </AccessibilityProvider>
         </LanguageProvider>

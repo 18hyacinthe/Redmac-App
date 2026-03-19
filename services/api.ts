@@ -1,6 +1,11 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { PointDeVente, PaginatedResponse, FiltersResponse, StatsResponse, CreatePointInput } from '@/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+    PointDeVente, PaginatedResponse, FiltersResponse, StatsResponse,
+    CreatePointInput, User, LoginResponse, RegisterResponse,
+    MyPointsResponse, RankingAgent,
+} from '@/types';
 
 // ============================================================
 // 🔧 BACKEND URL — MODIFIEZ ICI QUAND LE TUNNEL CHANGE
@@ -33,20 +38,46 @@ function getBackendUrl(): string {
 }
 
 const API_URL = getBackendUrl();
+const TOKEN_KEY = '@geocommercial_jwt_token';
 
 console.log('🔗 API URL:', API_URL);
 
 class GeoCommercialAPI {
+    private token: string | null = null;
+
+    // Token management
+    async setToken(token: string | null) {
+        this.token = token;
+        if (token) {
+            await AsyncStorage.setItem(TOKEN_KEY, token);
+        } else {
+            await AsyncStorage.removeItem(TOKEN_KEY);
+        }
+    }
+
+    async getToken(): Promise<string | null> {
+        if (this.token) return this.token;
+        try {
+            this.token = await AsyncStorage.getItem(TOKEN_KEY);
+        } catch (e) { /* ignore */ }
+        return this.token;
+    }
+
+    async isAuthenticated(): Promise<boolean> {
+        const token = await this.getToken();
+        return !!token;
+    }
+
     private async request<T>(
         endpoint: string,
         options: RequestInit = {},
     ): Promise<T> {
+        const token = await this.getToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            // ngrok free tier requires this header to skip the warning page
             'ngrok-skip-browser-warning': 'true',
-            // API Key for write operations (POST, PATCH)
             'X-API-KEY': 'geocommercial_2026_access_secure_key',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             ...(options.headers as Record<string, string>),
         };
 
@@ -205,6 +236,83 @@ class GeoCommercialAPI {
             method: 'POST',
             body: JSON.stringify({ message, history: history || [] }),
         });
+    }
+
+    // ==================
+    // AUTH
+    // ==================
+
+    /**
+     * POST /api/auth/request-otp — Send OTP code via SMS
+     */
+    async requestOtp(phone_number: string): Promise<{ message: string }> {
+        return this.request<{ message: string }>('/auth/request-otp', {
+            method: 'POST',
+            body: JSON.stringify({ phone_number }),
+        });
+    }
+
+    /**
+     * POST /api/auth/verify-otp — Verify OTP and login
+     */
+    async verifyOtp(phone_number: string, code: string): Promise<LoginResponse> {
+        return this.request<LoginResponse>('/auth/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ phone_number, code }),
+        });
+    }
+
+    /**
+     * POST /api/auth/register — Create a new user account
+     */
+    async register(data: { email: string; password: string; name: string }): Promise<RegisterResponse> {
+        return this.request<RegisterResponse>('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    /**
+     * POST /api/auth/login — Login with email/password
+     */
+    async login(email: string, password: string): Promise<LoginResponse> {
+        return this.request<LoginResponse>('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+        });
+    }
+
+    /**
+     * GET /api/auth/me — Get current user profile
+     */
+    async getMe(): Promise<User> {
+        return this.request<User>('/auth/me');
+    }
+
+    /**
+     * GET /api/points/my-points — Get agent's collected points + stats
+     */
+    async getMyPoints(params?: { page?: number; limit?: number; status?: string }): Promise<MyPointsResponse> {
+        const query = new URLSearchParams();
+        if (params?.page) query.set('page', String(params.page));
+        if (params?.limit) query.set('limit', String(params.limit));
+        if (params?.status) query.set('status', params.status);
+        const qs = query.toString();
+        return this.request<MyPointsResponse>(`/points/my-points${qs ? `?${qs}` : ''}`);
+    }
+
+    /**
+     * GET /api/auth/ranking — Leaderboard of agents
+     */
+    async getRanking(): Promise<RankingAgent[]> {
+        return this.request<RankingAgent[]>('/auth/ranking');
+    }
+
+    /**
+     * Logout — Clear stored token
+     */
+    async logout(): Promise<void> {
+        await this.setToken(null);
     }
 }
 

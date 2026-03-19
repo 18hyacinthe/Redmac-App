@@ -3,11 +3,12 @@ import { StyleSheet, View, Text, TouchableOpacity, Platform, ActivityIndicator }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
-import { ChevronLeft, MapPin, RefreshCw } from 'lucide-react-native';
+import { ChevronLeft, MapPin, RefreshCw, LogIn } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { PALETTE, TYPOGRAPHY, RADIUS, SPACING, SHADOWS } from '@/constants/theme';
 import { useLanguage } from '@/providers/LanguageProvider';
+import { useAuth } from '@/providers/AuthProvider';
 import StepProgress from '@/components/StepProgress';
 import ActionButton from '@/components/ActionButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,10 +18,11 @@ const STEP_ICONS = ['📍', '🏪', '📸', '✏️', '✅'];
 export default function LocationStep() {
     const router = useRouter();
     const { t } = useLanguage();
+    const { isAuthenticated } = useAuth();
     const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => { getLocation(); }, []);
+    useEffect(() => { if (isAuthenticated) getLocation(); }, [isAuthenticated]);
 
     const getLocation = async () => {
         setLoading(true);
@@ -64,6 +66,34 @@ var map=L.map('map',{zoomControl:false,attributionControl:false}).setView([${loc
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 L.marker([${location.latitude},${location.longitude}],{icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;border-radius:50%;background:#C65D3B;border:3px solid white;box-shadow:0 0 12px rgba(198,93,59,0.5)"></div>',iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);
 </script></body></html>`;
+
+    // Auth gate — must be logged in to add a point
+    if (!isAuthenticated) {
+        return (
+            <SafeAreaView style={styles.container} edges={['top']}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                        <ChevronLeft size={24} color={PALETTE.text.primary} />
+                    </TouchableOpacity>
+                    <Text style={styles.stepLabel}>{t('add', 'stepOf', { current: 1, total: 5 })}</Text>
+                </View>
+                <View style={styles.authGate}>
+                    <Text style={styles.authGateEmoji}>🔐</Text>
+                    <Text style={styles.authGateTitle}>Connexion requise</Text>
+                    <Text style={styles.authGateDesc}>
+                        Vous devez être connecté pour ajouter un point de vente et gagner des points.
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.authGateBtn}
+                        onPress={() => router.push('/auth/login')}
+                    >
+                        <LogIn size={20} color={PALETTE.text.inverse} />
+                        <Text style={styles.authGateBtnText}>Se connecter</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -173,4 +203,30 @@ const styles = StyleSheet.create({
         fontSize: TYPOGRAPHY.size.sm, fontFamily: TYPOGRAPHY.fontFamily.semiBold, color: PALETTE.clay[500],
     },
     footer: { padding: SPACING.lg },
+
+    // Auth gate styles
+    authGate: {
+        flex: 1, alignItems: 'center', justifyContent: 'center',
+        paddingHorizontal: SPACING['2xl'],
+    },
+    authGateEmoji: { fontSize: 56, marginBottom: SPACING.lg },
+    authGateTitle: {
+        fontSize: TYPOGRAPHY.size.xl, fontFamily: TYPOGRAPHY.fontFamily.bold,
+        color: PALETTE.text.primary, marginBottom: SPACING.sm,
+    },
+    authGateDesc: {
+        fontSize: TYPOGRAPHY.size.base, fontFamily: TYPOGRAPHY.fontFamily.regular,
+        color: PALETTE.text.secondary, textAlign: 'center', lineHeight: 22,
+        marginBottom: SPACING.xl,
+    },
+    authGateBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+        backgroundColor: PALETTE.clay[500], borderRadius: RADIUS.md,
+        paddingHorizontal: SPACING['2xl'], paddingVertical: SPACING.base,
+        ...SHADOWS.medium,
+    },
+    authGateBtnText: {
+        fontSize: TYPOGRAPHY.size.base, fontFamily: TYPOGRAPHY.fontFamily.bold,
+        color: PALETTE.text.inverse,
+    },
 });

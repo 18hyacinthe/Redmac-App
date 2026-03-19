@@ -73,3 +73,65 @@ export interface CreatePointInput {
   image_url?: string;
   source?: string;
 }
+
+// ==================
+// AUTH TYPES
+// ==================
+
+export interface Voucher {
+  id: number;
+  partner: string;
+  code: string;
+  value: number;
+  created_at: string;
+}
+
+export interface User {
+  id: number;
+  email: string | null;
+  phone: string | null;
+  role: 'agent' | 'admin';
+  points_sent: number;
+  nb_validated: number;
+  nb_rejected: number;
+  vouchers: Voucher[];
+}
+
+export interface AgentStats {
+  phone: string;
+  email: string | null;
+  role: string;
+  points_cumules: number;
+  nb_valide: number;
+  nb_en_attente: number;
+  nb_rejete: number;
+  total_collecte: number;
+}
+
+export interface MyPointsResponse {
+  agent: AgentStats;
+  data: PointDeVente[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface RankingAgent {
+  id: number;
+  phone_number: string;
+  email: string | null;
+  role: string;
+  points_sent: number;
+  nb_validated: number;
+  nb_rejected: number;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: User;
+}
+
+export interface RegisterResponse {
+  message: string;
+  userId: number;
+}

@@ -1,18 +1,20 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Animated, Image, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, Animated, Image, StatusBar, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import { Map, Plus, BarChart3, Info } from 'lucide-react-native';
+import { Map, Plus, BarChart3, User, LogIn } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { PALETTE, TYPOGRAPHY, SPACING, RADIUS } from '@/constants/theme';
 import { useLanguage } from '@/providers/LanguageProvider';
 import ActionButton from '@/components/ActionButton';
 import LanguageSwitch from '@/components/LanguageSwitch';
 import GlassSurface from '@/components/GlassSurface';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { isAuthenticated, user } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(60)).current;
 
@@ -52,7 +54,15 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <LanguageSwitch />
           <Text style={styles.appName}>{t('home', 'appName')}</Text>
-          <View style={styles.headerSpacer} />
+          <TouchableOpacity
+            style={styles.profileBtn}
+            onPress={() => router.push(isAuthenticated ? '/profile' : '/auth/login')}
+          >
+            {isAuthenticated
+              ? <User size={22} color={PALETTE.clay[500]} />
+              : <LogIn size={22} color={PALETTE.text.secondary} />
+            }
+          </TouchableOpacity>
         </View>
 
         {/* Main content */}
@@ -72,14 +82,50 @@ export default function HomeScreen() {
               <ActionButton
                 icon={<Plus size={26} color={PALETTE.text.inverse} />}
                 label={t('home', 'addPoint')}
-                onPress={() => router.push('/add/location')}
+                onPress={() => {
+                  if (!isAuthenticated) {
+                    Alert.alert(
+                      '🔐 Connexion requise',
+                      'Vous devez être connecté pour ajouter un point de vente.',
+                      [
+                        { text: 'Annuler', style: 'cancel' },
+                        { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+                      ]
+                    );
+                    return;
+                  }
+                  router.push('/add/location');
+                }}
                 variant="primary"
               />
 
               <ActionButton
                 icon={<BarChart3 size={26} color={PALETTE.clay[400]} />}
-                label={t('home', 'explore')}
-                onPress={() => router.push('/stats')}
+                label={isAuthenticated ? 'Mon Dashboard' : t('home', 'explore')}
+                onPress={() => {
+                  if (!isAuthenticated) {
+                    Alert.alert(
+                      '🔐 Connexion requise',
+                      'Connectez-vous pour accéder aux statistiques.',
+                      [
+                        { text: 'Annuler', style: 'cancel' },
+                        { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+                      ]
+                    );
+                    return;
+                  }
+                  router.push('/stats');
+                }}
+                variant="glass"
+              />
+
+              <ActionButton
+                icon={isAuthenticated
+                  ? <User size={26} color={PALETTE.clay[400]} />
+                  : <LogIn size={26} color={PALETTE.clay[400]} />
+                }
+                label={isAuthenticated ? 'Mon Profil' : 'Se connecter'}
+                onPress={() => router.push(isAuthenticated ? '/profile' : '/auth/login')}
                 variant="glass"
               />
             </View>
@@ -136,8 +182,15 @@ const styles = StyleSheet.create({
     color: PALETTE.text.primary,
     letterSpacing: 0.5,
   },
-  headerSpacer: {
-    width: 60,
+  profileBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: PALETTE.glass.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: PALETTE.glass.whiteBorder,
   },
   content: {
     flex: 1,
